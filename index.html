@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Image Display System</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        nav ul li {
+            margin-right: 20px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+
+        /* Image Display */
+        .image-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .image-display img {
+            max-width: 100%;
+            max-height: 80vh;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
+
+        .image-display h2 {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+
+        .image-display p {
+            margin-top: 10px;
+            max-width: 600px;
+            color: #666;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            display: none; /* Hidden by default */
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .admin-panel h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .delete-btn {
+            background-color: #e74c3c;
+            margin-left: 10px;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #3498db;
+        }
+
+        .file-upload.active {
+            border-color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+
+        .file-upload p {
+            margin: 10px 0;
+            color: #7f8c8d;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .preview-container {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+        }
+
+        /* Images List */
+        .images-list {
+            margin-top: 30px;
+        }
+
+        .image-item {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .image-thumb {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        .image-details {
+            flex-grow: 1;
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: 15px;
+        }
+
+        .qr-url {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+            word-break: break-all;
+            max-width: 150px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Message styles */
+        .message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Storage Warning */
+        .storage-warning {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            color: #856404;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            background-color: #f8f9fa;
+        }
+
+        .tab.active {
+            background-color: white;
+            border-color: #ddd;
+            border-bottom-color: white;
+            margin-bottom: -1px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .image-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .image-thumb {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+
+            .qr-container {
+                margin-top: 15px;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#" id="admin-link">Admin Panel</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <!-- Image Display Section (Default View) -->
+        <div id="image-display" class="image-display">
+            <img id="display-img" src="https://via.placeholder.com/800x600?text=Select+an+Image" alt="Selected Image">
+            <h2 id="display-title">No Image Selected</h2>
+            <p id="display-description">Please select an image or scan a QR code.</p>
+        </div>
+
+        <!-- Admin Panel Section (Hidden by Default) -->
+        <div id="admin-panel" class="admin-panel">
+            <h2>QR Code Image System - Admin Panel</h2>
+
+            <div id="message-container"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processing image...</p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="upload">Upload Image</div>
+                <div class="tab" data-tab="url">Image URL</div>
+            </div>
+
+            <div id="tab-upload" class="tab-content active">
+                <div id="file-upload" class="file-upload">
+                    <input type="file" id="image-file" accept="image/*">
+                    <p>Drag & drop your image here or click to browse</p>
+                    <p><small>Supported formats: JPG, PNG, GIF (max 5MB)</small></p>
+                </div>
+                <div id="preview-container" class="preview-container">
+                    <h4>Image Preview:</h4>
+                    <img id="image-preview" src="" alt="Preview">
+                </div>
+                <div class="storage-warning">
+                    <p><strong>Note:</strong> Images are stored in your browser's local storage and may be cleared if you clear your browser data. Maximum recommended storage is 5-10 images.</p>
+                </div>
+            </div>
+
+            <div id="tab-url" class="tab-content">
+                <div class="form-group">
+                    <label for="image-url">Image URL:</label>
+                    <input type="text" id="image-url" placeholder="https://example.com/image.jpg">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="image-title">Title:</label>
+                <input type="text" id="image-title" placeholder="Image Title">
+            </div>
+
+            <div class="form-group">
+                <label for="image-description">Description:</label>
+                <textarea id="image-description" placeholder="Image Description"></textarea>
+            </div>
+
+            <button id="add-image-btn">Add Image</button>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="base-url">QR Code Base URL (update if using a custom domain):</label>
+                <input type="text" id="base-url" value="">
+            </div>
+
+            <div class="images-list" id="images-list">
+                <h3>Your Images</h3>
+                <div id="images-container">
+                    <!-- Images will be listed here -->
+                    <p id="no-images-message">No images added yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the app when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default base URL to current location
+            document.getElementById('base-url').value = window.location.origin + window.location.pathname;
+            
+            // Load images from localStorage
+            loadImages();
+            
+            // Check if there's an image ID in the URL parameters
+            checkUrlForImage();
+            
+            // Setup event listeners
+            setupEventListeners();
+        });
+
+        // Handle admin panel toggle and other events
+        function setupEventListeners() {
+            // Toggle admin panel
+            document.getElementById('admin-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                const adminPanel = document.getElementById('admin-panel');
+                const imageDisplay = document.getElementById('image-display');
+                
+                if (adminPanel.style.display === 'block') {
+                    adminPanel.style.display = 'none';
+                    imageDisplay.style.display = 'flex';
+                } else {
+                    adminPanel.style.display = 'block';
+                    imageDisplay.style.display = 'none';
+                }
+            });
+            
+            // Add new image
+            document.getElementById('add-image-btn').addEventListener('click', addNewImage);
+            
+            // Update base URL when changed
+            document.getElementById('base-url').addEventListener('change', function() {
+                // Refresh QR codes when base URL changes
+                loadImages();
+            });
+
+            // File upload handling
+            const fileUpload = document.getElementById('file-upload');
+            const fileInput = document.getElementById('image-file');
+            
+            fileUpload.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.classList.add('active');
+            });
+            
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.classList.remove('active');
+            });
+            
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.classList.remove('active');
+                
+                if (e.dataTransfer.files.length) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            // Tab switching
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Reset form values when switching tabs
+                    document.getElementById('image-url').value = '';
+                    
+                    const previewContainer = document.getElementById('preview-container');
+                    previewContainer.style.display = 'none';
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show active content
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    const targetTab = tab.getAttribute('data-tab');
+                    document.getElementById(`tab-${targetTab}`).classList.add('active');
+                });
+            });
+        }
+
+        // Handle file selection
+        function handleFileSelect(file) {
+            if (!file.type.match('image.*')) {
+                showMessage('Please select an image file (JPG, PNG, GIF)', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                showMessage('Image is too large. Please select an image under 5MB', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.getElementById('preview-container');
+                const imagePreview = document.getElementById('image-preview');
+                
+                imagePreview.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // Load images from localStorage
+        function loadImages() {
+            const imagesContainer = document.getElementById('images-container');
+            const noImagesMessage = document.getElementById('no-images-message');
+            const images = getImagesFromStorage();
+            
+            // Clear current list
+            imagesContainer.innerHTML = '';
+            
+            if (images.length === 0) {
+                imagesContainer.appendChild(noImagesMessage);
+                return;
+            }
+            
+            // Create image items
+            images.forEach((image, index) => {
+                const imageItem = createImageListItem(image, index);
+                imagesContainer.appendChild(imageItem);
+            });
+
+            // Show storage usage warning if approaching limits
+            checkStorageUsage();
+        }
+
+        // Check localStorage usage
+        function checkStorageUsage() {
+            const images = getImagesFromStorage();
+            if (images.length > 0) {
+                const totalSize = new Blob([localStorage.getItem('qr-system-images')]).size;
+                const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+                const maxSize = 5; // Maximum recommended size in MB
+                
+                if (sizeMB > maxSize) {
+                    showMessage(`Warning: Storage usage is ${sizeMB}MB. Consider removing some images to avoid performance issues.`, 'warning');
+                }
+            }
+        }
+
+        // Create an image list item for the admin panel
+        function createImageListItem(image, index) {
+            const baseUrl = document.getElementById('base-url').value;
+            const imageUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}img=${index}`;
+            
+            const imageItem = document.createElement('div');
+            imageItem.className = 'image-item';
+            
+            // Thumbnail
+            const thumbnail = document.createElement('img');
+            thumbnail.src = image.url;
+            thumbnail.alt = image.title || 'Image';
+            thumbnail.className = 'image-thumb';
+            
+            // Details
+            const details = document.createElement('div');
+            details.className = 'image-details';
+            
+            const title = document.createElement('h4');
+            title.textContent = image.title || 'Untitled';
+            
+            const description = document.createElement('p');
+            description.textContent = image.description || 'No description';
+            
+            details.appendChild(title);
+            details.appendChild(description);
+            
+            // QR code
+            const qrContainer = document.createElement('div');
+            qrContainer.className = 'qr-container';
+            
+            const qrCanvas = document.createElement('canvas');
+            qrCanvas.id = `qr-${index}`;
+            
+            const downloadBtn = document.createElement('button');
+            downloadBtn.textContent = 'Download QR';
+            downloadBtn.style.marginTop = '10px';
+            downloadBtn.addEventListener('click', () => downloadQR(`qr-${index}`, image.title || `image-${index}`));
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.addEventListener('click', () => deleteImage(index));
+            
+            const urlText = document.createElement('div');
+            urlText.className = 'qr-url';
+            urlText.textContent = imageUrl;
+            
+            qrContainer.appendChild(qrCanvas);
+            qrContainer.appendChild(downloadBtn);
+            qrContainer.appendChild(deleteBtn);
+            qrContainer.appendChild(urlText);
+            
+            // Append all elements
+            imageItem.appendChild(thumbnail);
+            imageItem.appendChild(details);
+            imageItem.appendChild(qrContainer);
+            
+            // Generate QR code
+            QRCode.toCanvas(qrCanvas, imageUrl, { 
+                width: 128,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            });
+            
+            return imageItem;
+        }
+
+        // Add a new image
+        function addNewImage() {
+            const title = document.getElementById('image-title').value.trim();
+            const description = document.getElementById('image-description').value.trim();
+            const loading = document.getElementById('loading');
+            
+            // Check which tab is active
+            const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+            let imageSource = '';
+            
+            if (activeTab === 'upload') {
+                // Get from image preview
+                const imagePreview = document.getElementById('image-preview');
+                if (!imagePreview.src || imagePreview.src === window.location.href) {
+                    showMessage('Please select an image to upload', 'error');
+                    return;
+                }
+                imageSource = imagePreview.src;
+            } else {
+                // Get from URL
+                const url = document.getElementById('image-url').value.trim();
+                if (!url) {
+                    showMessage('Please enter an image URL', 'error');
+                    return;
+                }
+                imageSource = url;
+            }
+            
+            // Create new image object
+            const newImage = {
+                url: imageSource,
+                title: title,
+                description: description,
+                dateAdded: new Date().toISOString()
+            };
+            
+            // For URL images, we need to check if the URL is valid
+            if (activeTab === 'url') {
+                loading.style.display = 'block';
+                
+                const img = new Image();
+                img.onload = function() {
+                    finishAddingImage(newImage);
+                    loading.style.display = 'none';
+                };
+                img.onerror = function() {
+                    showMessage('Invalid image URL or image not accessible', 'error');
+                    loading.style.display = 'none';
+                };
+                img.src = imageSource;
+            } else {
+                // For uploaded images, we can add directly
+                finishAddingImage(newImage);
+            }
+        }
+
+        // Complete the process of adding an image
+        function finishAddingImage(newImage) {
+            // Add to storage
+            const images = getImagesFromStorage();
+            images.push(newImage);
+            saveImagesToStorage(images);
+            
+            // Clear form
+            document.getElementById('image-url').value = '';
+            document.getElementById('image-title').value = '';
+            document.getElementById('image-description').value = '';
+            document.getElementById('image-preview').src = '';
+            document.getElementById('preview-container').style.display = 'none';
+            
+            // Reset file input
+            const fileInput = document.getElementById('image-file');
+            fileInput.value = '';
+            
+            // Reload images list
+            loadImages();
+            
+            showMessage('Image added successfully!', 'success');
+        }
+
+        // Delete an image
+        function deleteImage(index) {
+            if (confirm('Are you sure you want to delete this image?')) {
+                const images = getImagesFromStorage();
+                images.splice(index, 1);
+                saveImagesToStorage(images);
+                loadImages();
+                showMessage('Image deleted', 'success');
+            }
+        }
+
+        // Download QR code as PNG
+        function downloadQR(canvasId, fileName) {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const pngUrl = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pngUrl;
+                downloadLink.download = `qr-${fileName.replace(/\s+/g, '-').toLowerCase()}.png`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }
+        }
+
+        // Check URL for image parameter
+        function checkUrlForImage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const imgParam = urlParams.get('img');
+            
+            if (imgParam !== null) {
+                const imageIndex = parseInt(imgParam);
+                const images = getImagesFromStorage();
+                
+                if (!isNaN(imageIndex) && imageIndex >= 0 && imageIndex < images.length) {
+                    displayImage(images[imageIndex]);
+                } else {
+                    showNoImage();
+                }
+            }
+        }
+
+        // Display selected image in the main view
+        function displayImage(image) {
+            document.getElementById('display-img').src = image.url;
+            document.getElementById('display-title').textContent = image.title || '';
+            document.getElementById('display-description').textContent = image.description || '';
+            
+            // Hide elements if no data
+            if (!image.title) {
+                document.getElementById('display-title').style.display = 'none';
+            } else {
+                document.getElementById('display-title').style.display = 'block';
+            }
+            
+            if (!image.description) {
+                document.getElementById('display-description').style.display = 'none';
+            } else {
+                document.getElementById('display-description').style.display = 'block';
+            }
+        }
+
+        // Show default "no image" state
+        function showNoImage() {
+            document.getElementById('display-img').src = 'https://via.placeholder.com/800x600?text=Image+Not+Found';
+            document.getElementById('display-title').textContent = 'Image Not Found';
+            document.getElementById('display-description').textContent = 'The requested image does not exist or has been removed.';
+            document.getElementById('display-title').style.display = 'block';
+            document.getElementById('display-description').style.display = 'block';
+        }
+
+        // Show message to the user
+        function showMessage(message, type) {
+            const messageContainer = document.getElementById('message-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            messageElement.textContent = message;
+            
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageElement);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                messageContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        // Helper functions for localStorage
+        function getImagesFromStorage() {
+            const images = localStorage.getItem('qr-system-images');
+            return images ? JSON.parse(images) : [];
+        }
+        
+        function saveImagesToStorage(images) {
+            localStorage.setItem('qr-system-images', JSON.stringify(images));
+        }
+    </script>
+</body>
+</html>
